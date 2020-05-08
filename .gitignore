@@ -1,0 +1,3 @@
+# Project exclude paths
+/homepage-eureka/target/
+/homepage-service/homepage-common/target/
