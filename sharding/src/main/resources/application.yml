@@ -1,0 +1,33 @@
+server:
+  port: 8074
+spring:
+  application:
+    name: sharding-springboot-mybatis-demo
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  type-aliases-package: com.isoft.entity
+sharding:
+  jdbc:
+    datasource:
+      names: ds0
+      # 数据源ds0
+      ds0:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://10.138.227.219:3306/test?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+        username: root
+        password: mplm_2019
+    config:
+      sharding:
+        props:
+          sql.show: true #打印执行的数据库以及语句
+        binding-tables: t_user
+        tables:
+          t_user:  #t_user表
+            key-generator-column-name: id  #指定主键名称，sharding-jdbc默认生成主键策略为雪花算法（SnowFlake）
+            actual-data-nodes: ds0.t_user${0..1}  #数据节点,均匀分布
+            table-strategy:  #分表策略
+              inline: #行表达式
+                sharding-column: sex
+                #分表策略 按条件运算 性别等于M的存入t_user0表，其它存入t_user1表
+                algorithm-expression: t_user${sex % 2}  #按模运算分配  eg: t_user$->{sex.equalsIgnoreCase("M")?0:1}

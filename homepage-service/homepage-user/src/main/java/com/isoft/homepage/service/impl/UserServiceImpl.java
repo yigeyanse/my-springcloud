@@ -1,8 +1,8 @@
 package com.isoft.homepage.service.impl;
 
-import com.imooc.homepage.CourseInfo;
-import com.imooc.homepage.CourseInfosRequest;
-import com.imooc.homepage.UserInfo;
+import com.isoft.homepage.CourseInfo;
+import com.isoft.homepage.CourseInfosRequest;
+import com.isoft.homepage.UserInfo;
 import com.isoft.homepage.client.CourseClient;
 import com.isoft.homepage.dao.HomepageUserCourseDao;
 import com.isoft.homepage.dao.HomepageUserDao;
@@ -12,6 +12,10 @@ import com.isoft.homepage.service.IUserService;
 import com.isoft.homepage.vo.CreateUserRequest;
 import com.isoft.homepage.vo.UserCourseInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.Redisson;
+import org.redisson.api.RList;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -100,5 +104,40 @@ public class UserServiceImpl implements IUserService {
         );
 
         return new UserCourseInfo(userInfo, courseInfos);
+    }
+
+    private void test() throws InterruptedException {
+        RedissonClient client = Redisson.create();
+        RList<String> list = client.getList("myList");
+        list.clear();
+        list.add("bingo");
+        list.add("yanglbme");
+        list.add("https://github.com/yanglbme");
+        list.remove(-1);
+
+        boolean contains = list.contains("yanglbme");
+        System.out.println("List size: " + list.size());
+        System.out.println("Is list contains name 'yanglbme': " + contains);
+        list.forEach(System.out::println);
+        client.shutdown();
+
+
+        // RLock 继承了 java.util.concurrent.locks.Lock 接口
+        RLock lock = client.getLock("lock");
+        lock.lock();
+        System.out.println("lock acquired");
+        Thread t = new Thread(() -> {
+            RLock lock1 = client.getLock("lock");
+            lock1.lock();
+            System.out.println("lock acquired by thread");
+            lock1.unlock();
+            System.out.println("lock released by thread");
+        });
+        t.start();
+        t.join(1000);
+        lock.unlock();
+        System.out.println("lock released");
+        t.join();
+        client.shutdown();
     }
 }
